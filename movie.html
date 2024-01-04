@@ -10,126 +10,101 @@
 </head>
 <body>
   <h1>Movie Searcher</h1>
+  
+  <!-- Search bar -->
+  <input type="text" id="searchInput" placeholder="Search for a movie">
+  <button onclick="searchMovie()">Search</button>
 
-  <!-- Search Form -->
-  <form id="searchForm">
-    <label for="movieInput">Search for a movie:</label>
-    <input type="text" id="movieInput" required>
-    <button type="submit">Search</button>
-  </form>
-
-  <!-- Display Upcoming Movies -->
+  <!-- Display upcoming movies -->
   <h2>Upcoming Movies</h2>
   <ul id="upcomingMovies"></ul>
 
-  <!-- Display Movie Information -->
+  <!-- Display comprehensive information about a movie -->
   <h2>Movie Information</h2>
   <div id="movieInfo"></div>
 
-  <!-- Display Similar Movies -->
+  <!-- Display similar movies -->
   <h2>Similar Movies</h2>
   <ul id="similarMovies"></ul>
 
   <script>
-    const apiKey = "1bfdbff05c2698dc917dd28c08d41096";
+    const apiKey = "094a90f3c05a0256c9a148c853c5fd40";
     const apiUrl = "https://api.themoviedb.org/3/";
 
-    const searchForm = document.getElementById("searchForm");
-    const movieInput = document.getElementById("movieInput");
-    const upcomingMoviesList = document.getElementById("upcomingMovies");
-    const movieInfoContainer = document.getElementById("movieInfo");
-    const similarMoviesList = document.getElementById("similarMovies");
-
-    // Event listener for the search form
-    searchForm.addEventListener("submit", function (event) {
-      event.preventDefault();
-      const searchTerm = movieInput.value.trim();
-
-      if (searchTerm !== "") {
-        searchMovie(searchTerm);
-        movieInput.value = ""; // Clear input after searching
-      }
-    });
-
-    // Fetch upcoming movies on page load
-    fetchUpcomingMovies();
-
     // Function to fetch upcoming movies
-    function fetchUpcomingMovies() {
-      const upcomingMoviesUrl = `${apiUrl}movie/upcoming?api_key=${apiKey}&language=en-US&page=1`;
+    function getUpcomingMovies() {
+      const url = `${apiUrl}movie/upcoming?api_key=${apiKey}&language=en-US&page=1`;
 
-      fetch(upcomingMoviesUrl)
+      fetch(url)
         .then(response => response.json())
         .then(data => {
-          displayMovies(data.results, upcomingMoviesList);
+          const upcomingMoviesList = document.getElementById("upcomingMovies");
+          upcomingMoviesList.innerHTML = "";
+
+          data.results.forEach(movie => {
+            const li = document.createElement("li");
+            li.textContent = movie.title;
+            upcomingMoviesList.appendChild(li);
+          });
         })
         .catch(error => console.error("Error fetching upcoming movies:", error));
     }
 
     // Function to search for a movie
-    function searchMovie(movieTitle) {
-      const searchUrl = `${apiUrl}search/movie?api_key=${apiKey}&query=${encodeURIComponent(movieTitle)}`;
+    function searchMovie() {
+      const searchInput = document.getElementById("searchInput").value;
+      const url = `${apiUrl}search/movie?api_key=${apiKey}&query=${encodeURIComponent(searchInput)}`;
 
-      fetch(searchUrl)
+      fetch(url)
         .then(response => response.json())
         .then(data => {
           if (data.results.length > 0) {
-            const movieId = data.results[0].id;
-            displayMovieInformation(movieId);
-            displaySimilarMovies(movieId);
+            const movie = data.results[0];
+            displayMovieInfo(movie.id);
           } else {
-            movieInfoContainer.innerHTML = "<p>No results found for the search term.</p>";
-            similarMoviesList.innerHTML = ""; // Clear similar movies list
+            alert("Movie not found!");
           }
         })
-        .catch(error => console.error("Error searching for movie:", error));
+        .catch(error => console.error("Error searching for a movie:", error));
     }
 
-    // Function to display movie information
-    function displayMovieInformation(movieId) {
-      const movieInfoUrl = `${apiUrl}movie/${movieId}?api_key=${apiKey}&language=en-US`;
+    // Function to display comprehensive information about a movie
+    function displayMovieInfo(movieId) {
+      const url = `${apiUrl}movie/${movieId}?api_key=${apiKey}&language=en-US`;
 
-      fetch(movieInfoUrl)
+      fetch(url)
         .then(response => response.json())
         .then(data => {
-          const { title, overview, release_date, vote_average } = data;
-          const movieHTML = `
-            <h3>${title}</h3>
-            <p>Release Date: ${release_date}</p>
-            <p>Rating: ${vote_average}</p>
-            <p>${overview}</p>
-          `;
-          movieInfoContainer.innerHTML = movieHTML;
+          const movieInfo = document.getElementById("movieInfo");
+          movieInfo.innerHTML = `<h3>${data.title}</h3>
+                                <p>${data.overview}</p>
+                                <p>Release Date: ${data.release_date}</p>`;
+          displaySimilarMovies(movieId);
         })
         .catch(error => console.error("Error fetching movie information:", error));
     }
 
     // Function to display similar movies
     function displaySimilarMovies(movieId) {
-      const similarMoviesUrl = `${apiUrl}movie/${movieId}/similar?api_key=${apiKey}&language=en-US&page=1`;
+      const url = `${apiUrl}movie/${movieId}/similar?api_key=${apiKey}&language=en-US&page=1`;
 
-      fetch(similarMoviesUrl)
+      fetch(url)
         .then(response => response.json())
         .then(data => {
-          displayMovies(data.results, similarMoviesList);
+          const similarMoviesList = document.getElementById("similarMovies");
+          similarMoviesList.innerHTML = "";
+
+          data.results.forEach(movie => {
+            const li = document.createElement("li");
+            li.textContent = movie.title;
+            similarMoviesList.appendChild(li);
+          });
         })
         .catch(error => console.error("Error fetching similar movies:", error));
     }
 
-    // Function to display a list of movies
-    function displayMovies(movies, container) {
-      container.innerHTML = ""; // Clear previous content
-
-      if (movies.length > 0) {
-        movies.forEach(movie => {
-          const listItem = document.createElement("li");
-          listItem.textContent = movie.title;
-          container.appendChild(listItem);
-        });
-      } else {
-        container.innerHTML = "<p>No results found.</p>";
-      }
-    }
+    // Initial load
+    getUpcomingMovies();
   </script>
 </body>
 </html>
