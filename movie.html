@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Searcher</title>
+    <title>Movies</title>
     <style>
-        /* Add your styles here */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -19,8 +18,20 @@
             background-color: #fff;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
         .search-bar {
             margin-bottom: 20px;
+        }
+        #searchInput {
+            font-size: 16px;
+            padding: 10px;
+        }
+        #searchButton {
+            font-size: 16px;
+            padding: 10px;
         }
         .movies-container {
             display: flex;
@@ -70,14 +81,22 @@
             text-decoration: none;
             cursor: pointer;
         }
+        .back-button {
+            font-size: 16px;
+            padding: 10px;
+            cursor: pointer;
+        }
     </style>
 </head>
-<body>
+<body onload="displayUpcomingMovies()">
 
 <div class="container">
+    <h1>Movies</h1>
     <div class="search-bar">
+        <!-- Input for searching a movie -->
         <input type="text" id="searchInput" placeholder="Search for a movie...">
-        <button onclick="searchMovies()">Search</button>
+        <!-- Button to trigger movie search -->
+        <button id="searchButton" onclick="searchMovies()">Search</button>
     </div>
 
     <div class="movies-container" id="moviesContainer">
@@ -88,55 +107,92 @@
 <!-- Modal for displaying movie details -->
 <div class="modal" id="movieModal">
     <div class="modal-content">
+        <!-- Close button for the modal -->
         <span class="close" onclick="closeModal()">&times;</span>
+        <!-- Button to go back to the main page -->
+        <button class="back-button" onclick="goBack()">Back to Main Page</button>
+        <!-- Container for displaying detailed movie information -->
         <div id="movieDetails"></div>
+        <!-- Heading for similar movies -->
         <h2>Similar Movies</h2>
+        <!-- Container for displaying similar movies -->
         <div id="similarMovies"></div>
     </div>
 </div>
 
 <script>
+    // The Movie Database API key
     const apiKey = "094a90f3c05a0256c9a148c853c5fd40";
+    // API URL for making requests to The Movie Database
     const apiUrl = "https://api.themoviedb.org/3/";
 
-    function searchMovies() {
-        const searchInput = document.getElementById("searchInput").value;
-        const url = `${apiUrl}search/movie?api_key=${apiKey}&query=${searchInput}`;
+    // Function to display upcoming movies on page load
+    function displayUpcomingMovies() {
+        // API endpoint for upcoming movies
+        const url = `${apiUrl}movie/upcoming?api_key=${apiKey}`;
 
+        // Fetch upcoming movies and display them
         fetch(url)
             .then(response => response.json())
             .then(data => displayMovies(data.results))
             .catch(error => console.error('Error:', error));
     }
 
+    // Function to search for movies based on user input
+    function searchMovies() {
+        // Get the search input value
+        const searchInput = document.getElementById("searchInput").value;
+        // API endpoint for searching movies
+        const url = `${apiUrl}search/movie?api_key=${apiKey}&query=${searchInput}`;
+
+        // Fetch movies based on the search input and display them
+        fetch(url)
+            .then(response => response.json())
+            .then(data => displayMovies(data.results))
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Function to display movies on the page
     function displayMovies(movies) {
+        // Get the movies container element
         const moviesContainer = document.getElementById("moviesContainer");
+        // Clear the container before displaying new movies
         moviesContainer.innerHTML = "";
 
+        // Loop through the movie data and create a card for each movie
         movies.forEach(movie => {
             const movieCard = document.createElement("div");
             movieCard.classList.add("movie-card");
+            // Populate the card with movie information
             movieCard.innerHTML = `
                 <img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title}">
                 <h3>${movie.title}</h3>
                 <p>${movie.release_date}</p>
             `;
+            // Add an event listener to show detailed information when clicked
             movieCard.addEventListener("click", () => showMovieDetails(movie.id));
+            // Append the movie card to the container
             moviesContainer.appendChild(movieCard);
         });
     }
 
+    // Function to show detailed information about a movie
     function showMovieDetails(movieId) {
+        // API endpoint for fetching details of a specific movie
         const url = `${apiUrl}movie/${movieId}?api_key=${apiKey}`;
+        // API endpoint for fetching similar movies
         const similarMoviesUrl = `${apiUrl}movie/${movieId}/similar?api_key=${apiKey}`;
 
+        // Fetch details of the main movie and similar movies concurrently
         Promise.all([fetch(url), fetch(similarMoviesUrl)])
             .then(responses => Promise.all(responses.map(response => response.json())))
             .then(([movieDetails, similarMovies]) => {
+                // Get modal and containers for movie details and similar movies
                 const modal = document.getElementById("movieModal");
                 const movieDetailsContainer = document.getElementById("movieDetails");
                 const similarMoviesContainer = document.getElementById("similarMovies");
 
+                // Populate the movie details container with information
                 movieDetailsContainer.innerHTML = `
                     <h2>${movieDetails.title}</h2>
                     <p>${movieDetails.overview}</p>
@@ -144,27 +200,44 @@
                     <p>Vote Average: ${movieDetails.vote_average}</p>
                 `;
 
+                // Clear the similar movies container
                 similarMoviesContainer.innerHTML = "";
+
+                // Loop through similar movies and create cards for each
                 similarMovies.results.forEach(similarMovie => {
                     const similarMovieCard = document.createElement("div");
                     similarMovieCard.classList.add("movie-card");
+                    // Populate the card with similar movie information
                     similarMovieCard.innerHTML = `
                         <img src="https://image.tmdb.org/t/p/w200${similarMovie.poster_path}" alt="${similarMovie.title}">
                         <h3>${similarMovie.title}</h3>
                         <p>${similarMovie.release_date}</p>
                     `;
+                    // Add an event listener to show details of the similar movie when clicked
                     similarMovieCard.addEventListener("click", () => showMovieDetails(similarMovie.id));
+                    // Append the similar movie card to the container
                     similarMoviesContainer.appendChild(similarMovieCard);
                 });
 
+                // Display the modal
                 modal.style.display = "block";
             })
             .catch(error => console.error('Error:', error));
     }
 
+    // Function to close the modal
     function closeModal() {
         const modal = document.getElementById("movieModal");
         modal.style.display = "none";
+    }
+
+    // Function to go back to the main page from the modal
+    function goBack() {
+        const modal = document.getElementById("movieModal");
+        // Hide the modal
+        modal.style.display = "none";
+        // Display upcoming movies on the main page
+        displayUpcomingMovies();
     }
 </script>
 
